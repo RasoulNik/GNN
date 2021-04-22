@@ -14,9 +14,9 @@ class Data(Layer):
         self.EX=100
         self.EY=100
         self.exponent=3.8
-        self.shadowing_sigma=0;
-        self.Zuser=0;
-        self.Zap=1;
+        self.shadowing_sigma=0
+        self.Zuser=0
+        self.Zap=1
         self.Nap=Nap
         self.Nuser=Nuser
     def call(self,batch_num,beta_open_loop=1):
@@ -49,8 +49,21 @@ class Data(Layer):
         g_linear = tf.pow(10.0,g/10.0)
         G = g_linear
         power_propotional = 1/tf.pow(tf.reduce_sum(G,axis=1),beta_open_loop)
-    
-        return G,power_propotional
+        #---------------------------------------
+        # g_interference_db = mask*g
+        # Graph_A_up = tf.concat([tf.zeros([batch_num,self.Nap,self.Nap],dtype='float32'),g_interference_db],axis=2)
+        # Graph_A_down = tf.concat([tf.transpose(g_interference_db,[0,2,1]),tf.zeros([batch_num, self.Nuser, self.Nuser], dtype='float32')], axis=2)
+        # Graph_A = tf.concat([Graph_A_up,Graph_A_down],axis = 1)
+        #--------------
+        # graph_A = tf.tile(tf.reshape(g,[batch_num,1,-1]),[1,self.Nuser,1])
+        # graph_A = tf.reshape (tf.transpose(graph_A,[0,2,1]),[-1,self.Nuser,self.Nuser,self.Nap])
+        graph_A = tf.tile(tf.expand_dims(tf.transpose(G, [0, 2, 1]), axis=2), [1, 1, self.Nuser, 1])
+        mask = tf.ones([graph_A.shape[1],graph_A.shape[1]])-tf.eye(graph_A.shape[1])
+        mask= tf.expand_dims(tf.expand_dims(mask,axis=0),axis=3)
+        graph_A = graph_A*mask
+        #------------------
+        # graph_A = tf.expand_dims(g_linear,axis=3)
+        return G,power_propotional,graph_A
     
     def Dist(self,X1,X2,EX,EY): 
         N1 = X1.shape[1]

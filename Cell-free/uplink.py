@@ -7,9 +7,9 @@ Created on Sat Mar 28 15:36:42 2020
 #---------------------------------
 import tensorflow as tf
 #import socket
-GPU_mode = 0
+GPU_mode = 1
 if GPU_mode:
-    num_GPU =0# GPU  to use, can be 0, 2
+    num_GPU = 0# GPU  to use, can be 0, 2
     mem_growth = True
     print('Tensorflow version: ', tf.__version__)
     gpus = tf.config.experimental.list_physical_devices("GPU")
@@ -31,13 +31,13 @@ from Plot_results_uplink import Plot
 #------------------------------------------
 # tf.keras.backend.set_floatx('float64')
 #train_iterations = 100
-batch_size = 100
+batch_size = 50
 # train_per_database=100
 # database_size=batch_size*train_per_database
-EPOCHS =int(10)
+EPOCHS =int(10000)
 #---------------- for values other than Nuser =12 and Nap=30, the size of environmen must be adjusted in the Data class
-Nuser = 8
-Nap = 20
+Nuser = 4
+Nap = 10
 P_over_noise = 125 # dB
 cost_type = 'maxmin'
 # cost_type = 'maxproduct'
@@ -52,14 +52,16 @@ def train(obj,Dataobj,epochs,mode):
     best_test_cost = float('inf')
     best_W = None
     LR= np.logspace(-3,-4, num=epochs)
-    G_batch,_= Dataobj(100*batch_size)
+    G_batch,_,graph_A= Dataobj(100*batch_size)
     SNR = np.power(10.0, P_over_noise / 10.0) * G_batch
-    Crossterm = tf.math.log(tf.linalg.matmul(SNR, SNR, transpose_a=True))
-    Crossterm = tf.reshape(Crossterm,[Crossterm.shape[0], -1])
-    Xin = tf.math.log(tf.reduce_sum(SNR,axis=1))
+    Crossterm =(tf.linalg.matmul(SNR, SNR, transpose_a=True))
+    Crossterm = tf.expand_dims(Crossterm,axis=3)
+
+    # Xin = tf.math.log(tf.reduce_sum(SNR,axis=1))
+    # Xin = tf.expand_dims(Xin,axis=3)
     # Xin = tf.reshape(tf.math.log(SNR), [SNR.shape[0], -1])
-    obj.Xin_av = np.mean(Xin,axis=0)
-    obj.Xin_std = np.std(Xin,axis=0)
+    obj.Xin_av = np.mean(graph_A,axis=0)
+    obj.Xin_std = np.std(graph_A,axis=0)
     obj.ct_av = np.mean(Crossterm,axis=0)
     obj.ct_std = np.std(Crossterm,axis=0)
     learning_cost = []
@@ -67,18 +69,21 @@ def train(obj,Dataobj,epochs,mode):
         for i in range(epochs):
             LR_i=LR[i ]
             optimizer = tf.keras.optimizers.Adam(LR_i)
-            G_batch,_= Dataobj(100*batch_size)
+            G_batch,_,graph_A = Dataobj(10*batch_size)
             SNR = np.power(10.0, P_over_noise / 10.0) * G_batch
-            crossterm = tf.math.log(tf.linalg.matmul(SNR, SNR, transpose_a=True))
-            crossterm = tf.reshape(crossterm, [crossterm.shape[0], -1])
+            crossterm = tf.expand_dims((tf.linalg.matmul(SNR, SNR, transpose_a=True)),axis=3)
+            # crossterm = tf.reshape(crossterm, [crossterm.shape[0], -1])
             # xin = tf.reshape(tf.math.log(SNR), [SNR.shape[0], -1])
-            xin = tf.math.log(tf.reduce_sum(G_batch,axis=1))
-            xin = (xin-obj.Xin_av)/obj.Xin_std
+            # xin = tf.math.log(tf.reduce_sum(G_batch,axis=1))
+            # xin = (xin-obj.Xin_av)/obj.Xin_std
             xcrossterm = (crossterm-obj.ct_av)/obj.ct_std
-            xin = tf.concat([xin, xcrossterm], axis=1)
+            # xin = xcrossterm
+            # xin = tf.concat([xin, xcrossterm], axis=1)
+            xin = graph_A
+            xin = (xin - obj.Xin_av)/obj.Xin_std
             J=[]
             min_SINR_vec =[]
-            for j in range(200):
+            for j in range(20):
                 index = tf.random.uniform([batch_size],0,xin.shape[0],dtype=tf.dtypes.int32)
                 xin_j = tf.gather(xin,index,axis=0)
                 G_batch_j = tf.gather(G_batch,index,axis=0)
@@ -99,7 +104,7 @@ def train(obj,Dataobj,epochs,mode):
             J.append(cost.numpy())
             min_SINR_vec.append(min_SINR.numpy())
             learning_cost.append(cost.numpy())
-            if i % 10 == 0:
+            if i % 50 == 0:
                 test_cost = np.mean(J)
 #                bit2r.LR=bit2r.LR*.85
                 print('Iteration = ', i, 'Cost = ', np.mean(J), 'sir_min_av = ', np.mean(min_SINR_vec))
@@ -119,7 +124,7 @@ def train(obj,Dataobj,epochs,mode):
     return learning_cost
 #-----------------------------------
 def save_model(model, fn):
-    W = [model.get_weights(), model.Xin_av, model.Xin_std,model.ct_av,model.ct_std]
+    W = [model.get_weights(), model.Xin_av, model.Xin_std]
     with open(fn, 'wb') as f:
         pickle.dump(W, f)
 
@@ -139,21 +144,23 @@ data = Data(Nap,Nuser)
 unn = UNN(Nap,Nuser,cost_type)
 learning_cost = train(unn,data,EPOCHS,'x')
 #--------Create test data
-G_batch,p_frac= data(200)
+G_batch,p_frac,graph_A= data(1000)
 SNR = np.power(10.0, P_over_noise / 10.0) * G_batch
-crossterm = tf.math.log(tf.linalg.matmul(SNR, SNR, transpose_a=True))
-crossterm = tf.reshape(crossterm, [crossterm.shape[0], -1])
-# xin = tf.reshape(tf.math.log(SNR), [SNR.shape[0], -1])
-xin = tf.math.log(tf.reduce_sum(G_batch, axis=1))
+xin = graph_A
 xin = (xin - unn.Xin_av) / unn.Xin_std
-xcrossterm = (crossterm - unn.ct_av) / unn.ct_std
-xin = tf.concat([xin, xcrossterm], axis=1)
-
+# SNR = np.power(10.0, P_over_noise / 10.0) * G_batch
+# crossterm = tf.expand_dims(tf.math.log(tf.linalg.matmul(SNR, SNR, transpose_a=True)), axis=3)
+# crossterm = tf.reshape(crossterm, [crossterm.shape[0], -1])
+# xin = tf.reshape(tf.math.log(SNR), [SNR.shape[0], -1])
+# xin = tf.math.log(tf.reduce_sum(G_batch,axis=1))
+# xin = (xin-obj.Xin_av)/obj.Xin_std
+# xcrossterm = (crossterm - unn.ct_av) / unn.ct_std
+# xin = xcrossterm
 
 p = unn.Network(xin)
 plot =Plot(Nap,Nuser)
-sinr_NN = plot.sinr_averaged_fading(SNR,p)
-sinr_frac = plot.sinr_averaged_fading(SNR,p_frac)
+sinr_NN = plot.sinr(SNR,p)
+sinr_frac = plot.sinr(SNR,p_frac)
 plot.cdfplot([sinr_NN.numpy(),sinr_frac.numpy()])
 _,SINR_NN,_ = unn.Loss(SNR,p)
 _,SINR_frac,_ = unn.Loss(SNR,p_frac)

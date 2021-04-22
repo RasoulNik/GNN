@@ -10,7 +10,7 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import Layer
 from Loss_uplink import Loss
 # from convNN import xNN
-from xNN import xNN
+from xNN1 import xNN
 class UNN(Layer):
     def __init__(self,Nap,Nuser,cost_type, **kwargs):
         super(UNN, self).__init__(**kwargs)
@@ -18,9 +18,9 @@ class UNN(Layer):
         self.Nuser=Nuser
         self.cost_type = cost_type
     def build(self,input_shape):
-        self.Network=xNN(self.Nuser)
+        self.Network=xNN(self.Nap,self.Nuser)
         self.Loss=Loss(self.Nap,self.Nuser,self.cost_type)
-    @tf.function
+    # @tf.function
     def call(self,xin,SNR):
         p = self.Network(xin)
         cost,SIR,min_SINR = self.Loss(SNR,p)

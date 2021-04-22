@@ -14,9 +14,9 @@ class Data(Layer):
         self.EX=100
         self.EY=100
         self.exponent=3.8
-        self.shadowing_sigma=0;
-        self.Zuser=0;
-        self.Zap=1;
+        self.shadowing_sigma=0
+        self.Zuser=0
+        self.Zap=1
         self.Nuser_drop=5*Nuser
         self.Nap=Nuser
         self.Nuser=Nuser
@@ -45,14 +45,18 @@ class Data(Layer):
         g= g+self.shadowing_sigma*tf.random.normal([D_assign.shape[0],self.Nap,self.Nuser],0,1)
         g_linear=tf.pow(10.0,g/10)
         G = g_linear
-        power_propotional=1/tf.pow(tf.linalg.diag_part(g_linear),beta_open_loop)
+        power_propotional=1/tf.pow(tf.linalg.diag_part(G),beta_open_loop)
         # power_propotional = power_propotional/tf.red
         # else:
         #     print('Not enough valid batches created')
-        return G, power_propotional
+        graph_A = tf.expand_dims(G, axis=3)
+        mask = tf.ones([graph_A.shape[1],graph_A.shape[1]])-tf.eye(graph_A.shape[1])
+        mask= tf.expand_dims(tf.expand_dims(mask,axis=0),axis=3)
+        graph_A = graph_A*mask
+        return G, power_propotional,graph_A
     def Assign_AP(self,D):
-        D_assign=tf.zeros([D.shape[0],self.Nap,1],dtype='float32')
-        d_sort=tf.math.argmin(D,axis=1)
+        D_assign = tf.zeros([D.shape[0],self.Nap,1],dtype='float32')
+        d_sort = tf.math.argmin(D,axis=1)
         # d_sort =tf.squeeze(d_sort)
         # Status=1
         # Make sure mask does not have zero value!!!!!!

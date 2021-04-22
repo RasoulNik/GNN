@@ -11,7 +11,7 @@ GPU_mode=1 # set this value one if you have proper GPU setup in your computer
 #The easiet way for using the GPU is docker
 
 if GPU_mode: 
-    num_GPU = 2 # choose among available GPUs
+    num_GPU = 1 # choose among available GPUs
     mem_growth = True
     print('Tensorflow version: ', tf.__version__)
     gpus = tf.config.experimental.list_physical_devices("GPU")
@@ -43,9 +43,9 @@ import pickle
 batch_size = 100
 # train_per_database=100
 # database_size=batch_size*train_per_database
-EPOCHS =int(500)
-Nuser =30
-Nap = 30
+EPOCHS = int(50000)
+Nuser = 3
+Nap = 3
 #Lambda=.001
 #alpha=1
 Id_save='2'
@@ -65,12 +65,13 @@ def train(obj,Dataobj,epochs,mode):
     best_test_rate = -float('inf')
     best_W = None
     LR = np.logspace(-3,-4, num=epochs)
-    G_batch,_=Dataobj(5*batch_size)
+    G_batch,_,graph_A=Dataobj(10*batch_size)
     SNR = np.power(10,P_over_noise/10)*G_batch
-#     Xin=np.reshape(np.log(SNR),[SNR.shape[0],-1])
-    Xin = tf.linalg.diag_part(tf.math.log(SNR))
+    # Xin=np.reshape(np.log(SNR),[SNR.shape[0],-1])
+#     Xin = tf.linalg.diag_part(tf.math.log(SNR))
+    Xin = graph_A
     obj.Xin_av = np.mean(Xin,axis=0)
-    obj.Xin_std = np.std(Xin,axis=0)
+    obj.Xin_std = np.std(Xin,axis=0)+1e-20
     J_total =[]
     min_SINR_total=[]
     try:
@@ -78,14 +79,16 @@ def train(obj,Dataobj,epochs,mode):
             LR_i = LR[i ]
             optimizer = tf.keras.optimizers.Adam(LR_i)
             # 100*batch_size is the size of each small database
-            G_batch,_=Dataobj(100*batch_size)
+            G_batch,_,graph_A=Dataobj(100*batch_size)
             SNR = tf.pow(10.0,P_over_noise/10.0)*G_batch
 #             xin=tf.reshape(tf.math.log(SNR),[SNR.shape[0],-1])
-            xin = tf.linalg.diag_part(tf.math.log(SNR))
+#             xin = tf.linalg.diag_part(tf.math.log(SNR))
+            xin = graph_A
             xin = (xin-obj.Xin_av)/obj.Xin_std
+
             J = []
             min_SINR_vec =[]
-            for j in range(200):
+            for j in range(20):
                 index = tf.random.uniform([batch_size],0,xin.shape[0],dtype=tf.dtypes.int32)
                 xin_j = tf.gather(xin,index,axis=0)
                 SNR_j = tf.gather(SNR,index,axis=0)
@@ -96,16 +99,20 @@ def train(obj,Dataobj,epochs,mode):
                     gradients = tape.gradient(cost, obj.trainable_weights)
                     # Gradient clipping
                     gradients,grad_norm = tf.clip_by_global_norm(gradients, 1.0)
-                    
+
                     # Update the weights of our linear layer.
-                    # grad_check = [0]*len(c_gradients)
-                    # for grad_i in range(len(c_gradients)):
-                    #     # try:
-                    #     grad_check = tf.debugging.check_numerics(c_gradients[grad_i],'UNN: Gradient error')
-                    #     # except:
-                    #     #     pass
+                    # grad_check = [0]*len(gradients)
+                    # for grad_i in range(len(gradients)):
+                    #     try:
+                    #         grad_check = tf.debugging.check_numerics(gradients[grad_i],'UNN: Gradient error')
+                    #     except:
+                    #         pass
                     # with tf.control_dependencies([grad_check]):
-                optimizer.apply_gradients(zip(gradients, obj.trainable_weights))
+                if tf.math.is_inf(tf.reduce_sum(gradients[0])).numpy() or tf.math.is_nan(
+                        tf.reduce_sum(gradients[0])).numpy():
+                    print('Grad is inf or nan')
+                else:
+                    optimizer.apply_gradients(zip(gradients, obj.trainable_weights))
                 J.append(cost.numpy())
                 min_SINR_vec.append(min_SINR.numpy())
                 J_total.append(cost.numpy())
@@ -120,7 +127,7 @@ def train(obj,Dataobj,epochs,mode):
                 # if test_rate > best_test_rate:
                 best_test_rate = test_rate
                 best_W = obj.get_weights()
-                save_model(obj, 'models/'+mode+'UNN_'+current_time+'.mod')
+                save_model(obj, 'models/'+mode+'UNN'+'.mod')
 
                 with train_summary_writer.as_default():
                     tf.summary.scalar('test rate', test_rate, step=i)
@@ -150,11 +157,11 @@ def load_model(model, fn):
 data=Data(Nuser)
 # theta = .4 # a good benchmark for max-product cost
 theta = .7 # a good benchmark for maxmin cost
-G_batch,p_frac=data(50*batch_size,theta)
+G_batch,p_frac,graph_A=data(50*batch_size,theta)
 # xin=np.reshape(G_batch,[batch_size,-1])
 SNR = np.power(10,P_over_noise/10)*G_batch
 # xin=np.reshape(np.log(SNR),[SNR.shape[0],-1])
-xin=np.log(np.diagonal(SNR,axis1=1,axis2=2))
+xin= graph_A
 # xin = tf.linalg.diag_part(SNR)
 
 ######
