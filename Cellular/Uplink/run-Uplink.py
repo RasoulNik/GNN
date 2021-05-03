@@ -11,7 +11,7 @@ GPU_mode=1 # set this value one if you have proper GPU setup in your computer
 #The easiet way for using the GPU is docker
 
 if GPU_mode: 
-    num_GPU = 1 # choose among available GPUs
+    num_GPU = 0 # choose among available GPUs
     mem_growth = True
     print('Tensorflow version: ', tf.__version__)
     gpus = tf.config.experimental.list_physical_devices("GPU")
@@ -50,7 +50,8 @@ Nap = 3
 #alpha=1
 Id_save='2'
 P_over_noise=120 # dB
-cost_type='maxmin'
+cost_type = 'maxsum'
+# cost_type='maxmin'
 # cost_type='maxproduct'
 # load = True # set it False for training
 load = False
@@ -70,7 +71,7 @@ def train(obj,Dataobj,epochs,mode):
     # Xin=np.reshape(np.log(SNR),[SNR.shape[0],-1])
 #     Xin = tf.linalg.diag_part(tf.math.log(SNR))
     Xin = graph_A
-    obj.Xin_av = np.mean(Xin,axis=0)
+    obj.Xin_av =np.mean(Xin,axis=0)
     obj.Xin_std = np.std(Xin,axis=0)+1e-20
     J_total =[]
     min_SINR_total=[]
