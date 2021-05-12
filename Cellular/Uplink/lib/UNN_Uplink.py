@@ -11,7 +11,8 @@ from tensorflow.keras.layers import Layer
 from Loss import Loss
 # from Loss_downlink import Loss
 # from convNN import xNN
-from xNN1 import xNN
+# from xNN1 import xNN
+from xNN2 import xNN
 class UNN(Layer):
     def __init__(self,Nap,Nuser,cost_type,**kwargs):
         super(UNN, self).__init__(**kwargs)

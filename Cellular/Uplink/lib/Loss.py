@@ -37,13 +37,13 @@ class Loss(Layer):
         num = p*tf.linalg.diag_part(SNR)
         Total = tf.tile(tf.expand_dims(p,axis=1),[1,self.Nap,1])*SNR
         denom = tf.reduce_sum(Total,axis=2)-tf.linalg.diag_part(Total)
-        SINR = num/(denom)
+        SINR = num/(1+denom)
 
         if self.cost_type=='maxmin':
                 temp = self.alpha*tf.pow(tf.divide(1.0,.01+SINR),.4)
                 Cost= tf.reduce_sum(tf.exp(temp),axis=1,keepdims=True) 
                 const = tf.reduce_sum(tf.nn.relu(p-1),axis=1,keepdims=True)
-                Cost = 1.0/self.Nuser*(Cost+.1*const)
+                # Cost = 1.0/self.Nuser*(Cost+.1*const)
                 # Cost=tf.reduce_mean(Cost,axis=0)
         elif self.cost_type =='maxproduct':
                 temp = tf.pow(0.01+tf.divide(1.0,0.01+SINR),.4)
@@ -51,8 +51,8 @@ class Loss(Layer):
                   +.1*tf.reduce_mean(tf.nn.relu(p-1),axis=1,keepdims=True) 
                 ,axis=1)
         elif self.cost_type == 'maxsum':
-            const = 0.1*tf.reduce_mean(tf.nn.relu(p-1),axis=1,keepdims=True)
-            Cost = tf.reduce_mean(SINR)+const
+            # const = 0.1*tf.reduce_mean(tf.nn.relu(p-1),axis=1,keepdims=True)
+            Cost = -tf.reduce_mean(tf.math.log(1+SINR))
 
         # temp=tf.pow(tf.divide(1.0,0.01+SINR),.4)
         # Cost=tf.reduce_mean(tf.math.log(0.1+temp)

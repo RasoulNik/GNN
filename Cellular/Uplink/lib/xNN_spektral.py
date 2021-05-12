@@ -29,15 +29,10 @@ class xNN(Layer):
         # self.filter_coff = tf.Variable(tf.random.normal([self.Nfilter*self.Nchannel,self.Nlayer,1,1,self.Nfeature],0.0,1.0))
 
     def build(self,input_shape):
-        self.gggn0= spektral.layers.APPNPConv(channels=1, alpha=0.2, propagations=1, mlp_hidden=None, mlp_activation='relu',
-                                  dropout_rate=0.0, activation=None, use_bias=True, kernel_initializer='glorot_uniform',
-                                  bias_initializer='zeros')
-        self.gggn1= spektral.layers.APPNPConv(channels=1, alpha=0.2, propagations=1, mlp_hidden=None, mlp_activation='relu',
-                                  dropout_rate=0.0, activation=None, use_bias=True, kernel_initializer='glorot_uniform',
-                                  bias_initializer='zeros')
-        self.gggn2= spektral.layers.APPNPConv(channels=1, alpha=0.2, propagations=1, mlp_hidden=None, mlp_activation='relu',
-                                  dropout_rate=0.0, activation=None, use_bias=True, kernel_initializer='glorot_uniform',
-                                  bias_initializer='zeros')
+        self.gnn0= spektral.layers.ChebConv(channels=1, K=2, activation=None, use_bias=True, kernel_initializer='glorot_uniform',
+                                             bias_initializer='zeros')
+        self.gnn1= spektral.layers.ChebConv(channels=1, K=2, activation=None, use_bias=True, kernel_initializer='glorot_uniform',
+                                             bias_initializer='zeros')
         # self.gnn0 = GNN_layer(self.Nfilter, self.Nfeature, self.Nchannel, activation='relu')
         # self.gnn1 = GNN_layer(self.Nfilter, self.Nfeature, self.Nchannel, activation='relu')
         # self.gnn2 = GNN_layer(self.Nfilter, self.Nfeature, self.Nchannel, activation='relu')
@@ -50,14 +45,15 @@ class xNN(Layer):
         batch_num =xin.shape[0]
         xin = tf.transpose(xin,[0,3,1,2])
         xin = tf.reshape(xin,[xin.shape[0]*xin.shape[1],xin.shape[2],xin.shape[3]])
-        xin_cheb = spektral.utils.convolution.chebyshev_filter()
+        xin_cheb = spektral.utils.convolution.chebyshev_filter(xin[0].numpy(),2)
+        node_feature = tf.ones([1,xin[0].shape[1],1],'float32')
         # Apply GNN
-        y = self.gnn0(A,xtemp)
-        y = self.gnn1(A, y)
-        y = self.gnn2(A, y)
-        y = self.gnn3(A, y)
-        y = self.gnn4(A, y)
-        y = self.gnn5(A, y)
+        y = self.gnn0([node_feature,xin_cheb])
+        y = self.gnn1(y)
+        # y = self.gnn2(A, y)
+        # y = self.gnn3(A, y)
+        # y = self.gnn4(A, y)
+        # y = self.gnn5(A, y)
         # remove tile effect of gnnlayer
         y = tf.reduce_mean(y,axis=0)
         # average features effect

@@ -40,18 +40,18 @@ import pickle
 #------------------------------------------
 # tf.keras.backend.set_floatx('float64')
 #train_iterations = 100
-batch_size = 100
+batch_size = 500
 # train_per_database=100
 # database_size=batch_size*train_per_database
 EPOCHS = int(50000)
-Nuser = 3
-Nap = 3
+Nuser = 5
+Nap = 5
 #Lambda=.001
 #alpha=1
 Id_save='2'
 P_over_noise=120 # dB
-cost_type = 'maxsum'
-# cost_type='maxmin'
+# cost_type = 'maxsum'
+cost_type='maxmin'
 # cost_type='maxproduct'
 # load = True # set it False for training
 load = False
@@ -65,14 +65,17 @@ def train(obj,Dataobj,epochs,mode):
 
     best_test_rate = -float('inf')
     best_W = None
-    LR = np.logspace(-3,-4, num=epochs)
-    G_batch,_,graph_A=Dataobj(10*batch_size)
+    LR = np.logspace(-3,-4.5, num=epochs)
+    G_batch,_,graph_A=Dataobj(100*batch_size)
     SNR = np.power(10,P_over_noise/10)*G_batch
     # Xin=np.reshape(np.log(SNR),[SNR.shape[0],-1])
 #     Xin = tf.linalg.diag_part(tf.math.log(SNR))
     Xin = graph_A
     obj.Xin_av =np.mean(Xin,axis=0)
     obj.Xin_std = np.std(Xin,axis=0)+1e-20
+    obj.Xin_max = tf.math.abs(tf.reduce_max(graph_A))
+    # obj.Xin_av = graph_A
+    # obj.Xin_std = 1
     J_total =[]
     min_SINR_total=[]
     try:
@@ -80,12 +83,13 @@ def train(obj,Dataobj,epochs,mode):
             LR_i = LR[i ]
             optimizer = tf.keras.optimizers.Adam(LR_i)
             # 100*batch_size is the size of each small database
-            G_batch,_,graph_A=Dataobj(100*batch_size)
+            G_batch,_,graph_A=Dataobj(20*batch_size)
             SNR = tf.pow(10.0,P_over_noise/10.0)*G_batch
 #             xin=tf.reshape(tf.math.log(SNR),[SNR.shape[0],-1])
 #             xin = tf.linalg.diag_part(tf.math.log(SNR))
             xin = graph_A
-            xin = (xin-obj.Xin_av)/obj.Xin_std
+#             xin = (graph_A-obj.Xin_av)/obj.Xin_std
+            # xin = (xin+5.0)/5.0
 
             J = []
             min_SINR_vec =[]
@@ -158,7 +162,7 @@ def load_model(model, fn):
 data=Data(Nuser)
 # theta = .4 # a good benchmark for max-product cost
 theta = .7 # a good benchmark for maxmin cost
-G_batch,p_frac,graph_A=data(50*batch_size,theta)
+G_batch,p_frac,graph_A=data(5*batch_size,theta)
 # xin=np.reshape(G_batch,[batch_size,-1])
 SNR = np.power(10,P_over_noise/10)*G_batch
 # xin=np.reshape(np.log(SNR),[SNR.shape[0],-1])
@@ -166,7 +170,7 @@ xin= graph_A
 # xin = tf.linalg.diag_part(SNR)
 
 ######
-unn=UNN(Nap,Nuser,cost_type)
+unn=UNN(Nap,2*Nuser,cost_type)
 if load:
    cost,SINR,_ = unn(xin,SNR)
    current_dir = os.getcwd()
@@ -178,7 +182,8 @@ else:
     J_train,min_SINR_train=train(unn,data,EPOCHS,cost_type)
 #tensorboard --logdir ./logs --bind_all
 
-xin = (xin-unn.Xin_av)/unn.Xin_std
+# xin = (xin-unn.Xin_av)/unn.Xin_std
+xin = graph_A
 cost,SINR,min_SINR = unn.Loss(SNR,unn.Network(xin))
 print('Test cost is ',cost.numpy(),' min_SINR is ',min_SINR.numpy())
 RP = Plot()

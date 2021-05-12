@@ -7,7 +7,7 @@ Created on Sat Mar 28 13:53:00 2020
 
 
 import tensorflow as tf
-import tensorflow_probability as tfp
+# import tensorflow_probability as tfp
 from tensorflow.keras.layers import Layer
 from tensorflow.keras import initializers
 

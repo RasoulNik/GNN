@@ -13,7 +13,7 @@ class xNN(Layer):
     def __init__(self,Nuser,**kwargs):
         super(xNN, self).__init__(**kwargs)
         # self.Nap = NAp
-        self.Nuser=Nuser
+        self.Nuser = Nuser
         self.Nlayer = 8
         self.Nfilter = 5
         self.Nfeature = 1
