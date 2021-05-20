@@ -43,7 +43,7 @@ class Loss(Layer):
                 temp = self.alpha*tf.pow(tf.divide(1.0,.01+SINR),.4)
                 Cost= tf.reduce_sum(tf.exp(temp),axis=1,keepdims=True) 
                 const = tf.reduce_sum(tf.nn.relu(p-1),axis=1,keepdims=True)
-                # Cost = 1.0/self.Nuser*(Cost+.1*const)
+                Cost = 1.0/self.Nuser*(Cost+.1*const)
                 # Cost=tf.reduce_mean(Cost,axis=0)
         elif self.cost_type =='maxproduct':
                 temp = tf.pow(0.01+tf.divide(1.0,0.01+SINR),.4)

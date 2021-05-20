@@ -22,7 +22,7 @@ class xNN(Layer):
         self.Nuser=Nuser
         # self.Nlayer = 8
         self.Nfilter = 4
-        self.Nfeature = 1
+        self.Nfeature = 10
         # self.Nchannel = self.Nap
         self.Nchannel = 1
         # self.graph_size = self.Nap+self.Nuser
@@ -34,9 +34,9 @@ class xNN(Layer):
         self.gnn2 = GNN_layer(self.Nfilter, self.Nfeature, self.Nchannel, activation='relu')
         self.gnn3 = GNN_layer(self.Nfilter, self.Nfeature, self.Nchannel, activation='relu')
         self.gnn4 = GNN_layer(self.Nfilter, self.Nfeature, self.Nchannel, activation='relu')
-        self.gnn5 = GNN_layer(self.Nfilter, self.Nfeature, self.Nchannel, activation='linear')
+        self.gnn5 = GNN_layer(self.Nfilter, self.Nfeature, self.Nchannel, activation='sigmoid')
 
-#     @tf.function
+    @tf.function
     def call(self,xin):
         batch_num =xin.shape[0]
         xin = tf.transpose(xin,[0,3,1,2])
@@ -107,7 +107,7 @@ class GNN_layer(Layer):
     def build(self, input_shape):
         self.w = self.add_weight(
             shape=((self.Nfilter)*self.Nchannel,1,1,self.Nfeature),
-            initializer=initializers.RandomNormal(stddev=1),
+            initializer=tf.keras.initializers.GlorotNormal(),
             trainable=True,
         )
         self.activation_layer = tf.keras.layers.Activation(self.activation_fun)

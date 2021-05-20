@@ -7,11 +7,11 @@ Created on Sat Mar 28 15:36:42 2020
 #---------------------------------
 import tensorflow as tf
 #import socket
-GPU_mode=1 # set this value one if you have proper GPU setup in your computer
+GPU_mode= 1 # set this value one if you have proper GPU setup in your computer
 #The easiet way for using the GPU is docker
 
 if GPU_mode: 
-    num_GPU = 0 # choose among available GPUs
+    num_GPU = 1 # choose among available GPUs
     mem_growth = True
     print('Tensorflow version: ', tf.__version__)
     gpus = tf.config.experimental.list_physical_devices("GPU")
@@ -40,7 +40,7 @@ import pickle
 #------------------------------------------
 # tf.keras.backend.set_floatx('float64')
 #train_iterations = 100
-batch_size = 500
+batch_size = 100
 # train_per_database=100
 # database_size=batch_size*train_per_database
 EPOCHS = int(50000)
@@ -49,7 +49,7 @@ Nap = 5
 #Lambda=.001
 #alpha=1
 Id_save='2'
-P_over_noise=120 # dB
+P_over_noise = 120 # dB
 # cost_type = 'maxsum'
 cost_type='maxmin'
 # cost_type='maxproduct'
@@ -66,7 +66,7 @@ def train(obj,Dataobj,epochs,mode):
     best_test_rate = -float('inf')
     best_W = None
     LR = np.logspace(-3,-4.5, num=epochs)
-    G_batch,_,graph_A=Dataobj(100*batch_size)
+    G_batch,_,graph_A=Dataobj(10*batch_size)
     SNR = np.power(10,P_over_noise/10)*G_batch
     # Xin=np.reshape(np.log(SNR),[SNR.shape[0],-1])
 #     Xin = tf.linalg.diag_part(tf.math.log(SNR))
@@ -87,7 +87,7 @@ def train(obj,Dataobj,epochs,mode):
             SNR = tf.pow(10.0,P_over_noise/10.0)*G_batch
 #             xin=tf.reshape(tf.math.log(SNR),[SNR.shape[0],-1])
 #             xin = tf.linalg.diag_part(tf.math.log(SNR))
-            xin = graph_A
+            xin = graph_A/obj.Xin_max
 #             xin = (graph_A-obj.Xin_av)/obj.Xin_std
             # xin = (xin+5.0)/5.0
 
@@ -170,7 +170,7 @@ xin= graph_A
 # xin = tf.linalg.diag_part(SNR)
 
 ######
-unn=UNN(Nap,2*Nuser,cost_type)
+unn=UNN(Nap,Nuser,cost_type)
 if load:
    cost,SINR,_ = unn(xin,SNR)
    current_dir = os.getcwd()
@@ -183,7 +183,7 @@ else:
 #tensorboard --logdir ./logs --bind_all
 
 # xin = (xin-unn.Xin_av)/unn.Xin_std
-xin = graph_A
+xin = graph_A/unn.Xin_max
 cost,SINR,min_SINR = unn.Loss(SNR,unn.Network(xin))
 print('Test cost is ',cost.numpy(),' min_SINR is ',min_SINR.numpy())
 RP = Plot()
@@ -194,6 +194,29 @@ SIR_frac = RP.sinr_av(SNR,p_frac,Nap,Nuser,'Noclip')
 plot = Plot()
 sir_vec = [SIR_NN.numpy(),SIR_frac.numpy()]
 plot.cdfplot(sir_vec)
+#----------------------------- test with different number of users
+K= 1
+data2 = Data(K*Nuser)
+unn2 = unn
+unn2.Nuser = K*Nuser
+unn2.Nap = K*Nap
+unn2.Loss.Nuser = K*Nuser
+unn2.Loss.Nap = K*Nap
+# theta = .4 # a good benchmark for max-product cost
+theta = .7 # a good benchmark for maxmin cost
+G_batch,p_frac,graph_A=data2(5*batch_size,theta)
+SNR = np.power(10,P_over_noise/10)*G_batch
+xin = graph_A/unn.Xin_max
+cost,SINR,min_SINR = unn2.Loss(SNR,unn2.Network(xin))
+print('For 2*Nuser Test cost is ',cost.numpy(),' min_SINR is ',min_SINR.numpy())
+SIR_NN_clip = RP.sinr_av(SNR,unn2.Network(xin),K*Nap,K*Nuser)
+SIR_NN = RP.sinr_av(SNR,unn2.Network(xin),K*Nap,K*Nuser,'Noclip')
+# Assuming that the network operates in the interference limited scenario
+SIR_frac = RP.sinr_av(SNR,p_frac,K*Nap,K*Nuser,'Noclip')
+plot = Plot()
+sir_vec = [SIR_NN.numpy(),SIR_frac.numpy()]
+plot.cdfplot(sir_vec)
+
 #----------------------------------------
 # unique_name=time.ctime(time.time())
 # unique_name=unique_name[0:19]
