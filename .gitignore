@@ -1,5 +1,7 @@
 Cellular/Downlink/logs
 Cellular/Uplink/logs
 Cell-free/logs
+Cell-free/uplink/logs
+Cell-free/Downlink/logs
 venv/
 .idea/

@@ -49,10 +49,11 @@ class Data(Layer):
         # power_propotional = power_propotional/tf.red
         # else:
         #     print('Not enough valid batches created')
-        graph_A = tf.expand_dims(g+120, axis=3)
+        # graph_A = tf.expand_dims(g+120, axis=3)
+        graph_A = tf.expand_dims(G, axis=3)
         mask = tf.ones([graph_A.shape[1],graph_A.shape[1]])-tf.eye(graph_A.shape[1])
         mask= tf.expand_dims(tf.expand_dims(mask,axis=0),axis=3)
-        graph_A = graph_A*mask
+        # graph_A = graph_A*mask
         return G, power_propotional,graph_A
     def Assign_AP(self,D):
         D_assign = tf.zeros([D.shape[0],self.Nap,1],dtype='float32')

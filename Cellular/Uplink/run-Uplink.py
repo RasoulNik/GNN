@@ -40,12 +40,12 @@ import pickle
 #------------------------------------------
 # tf.keras.backend.set_floatx('float64')
 #train_iterations = 100
-batch_size = 100
+batch_size = 30
 # train_per_database=100
 # database_size=batch_size*train_per_database
 EPOCHS = int(50000)
-Nuser = 5
-Nap = 5
+Nuser = 10
+Nap = 10
 #Lambda=.001
 #alpha=1
 Id_save='2'
@@ -93,7 +93,7 @@ def train(obj,Dataobj,epochs,mode):
 
             J = []
             min_SINR_vec =[]
-            for j in range(20):
+            for j in range(1):
                 index = tf.random.uniform([batch_size],0,xin.shape[0],dtype=tf.dtypes.int32)
                 xin_j = tf.gather(xin,index,axis=0)
                 SNR_j = tf.gather(SNR,index,axis=0)
@@ -123,7 +123,7 @@ def train(obj,Dataobj,epochs,mode):
                 J_total.append(cost.numpy())
                 min_SINR_total.append(min_SINR.numpy())
             # print(i)
-            if i % 10 == 0:
+            if i % 50 == 0:
                 # test_rate=cost.numpy()[0]
                 test_rate=np.mean(J)
 #                bit2r.LR=bit2r.LR*.85
@@ -195,7 +195,7 @@ plot = Plot()
 sir_vec = [SIR_NN.numpy(),SIR_frac.numpy()]
 plot.cdfplot(sir_vec)
 #----------------------------- test with different number of users
-K= 1
+K= 2
 data2 = Data(K*Nuser)
 unn2 = unn
 unn2.Nuser = K*Nuser

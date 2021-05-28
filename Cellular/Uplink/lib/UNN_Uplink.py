@@ -12,14 +12,14 @@ from Loss import Loss
 # from Loss_downlink import Loss
 # from convNN import xNN
 # from xNN1 import xNN
-from xNN1 import xNN
+from xNN3 import xNN
 class UNN(Layer):
     def __init__(self,Nap,Nuser,cost_type,**kwargs):
         super(UNN, self).__init__(**kwargs)
         self.Nap=Nap
         self.Nuser=Nuser
         self.cost_type=cost_type
-        self.Xin_av =0
+        self.Xin_av = 0
         self.Xin_std = 1
     def build(self,input_shape):
         self.Network=xNN(self.Nuser)

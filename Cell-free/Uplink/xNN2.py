@@ -16,7 +16,7 @@ from tensorflow.keras import initializers
 
 
 class xNN(Layer):
-    def __init__(self,Nuser,**kwargs):
+    def __init__(self,Nap,Nuser,**kwargs):
         super(xNN, self).__init__(**kwargs)
         # self.Nap = NAp
         self.Nuser = Nuser

@@ -57,10 +57,14 @@ class Data(Layer):
         #--------------
         # graph_A = tf.tile(tf.reshape(g,[batch_num,1,-1]),[1,self.Nuser,1])
         # graph_A = tf.reshape (tf.transpose(graph_A,[0,2,1]),[-1,self.Nuser,self.Nuser,self.Nap])
-        graph_A = tf.tile(tf.expand_dims(tf.transpose(G, [0, 2, 1]), axis=2), [1, 1, self.Nuser, 1])
-        mask = tf.ones([graph_A.shape[1],graph_A.shape[1]])-tf.eye(graph_A.shape[1])
-        mask= tf.expand_dims(tf.expand_dims(mask,axis=0),axis=3)
-        graph_A = graph_A*mask
+        # graph_A = tf.tile(tf.expand_dims(tf.transpose(G, [0, 2, 1]), axis=2), [1, 1, self.Nuser, 1])
+        # mask = tf.ones([graph_A.shape[1],graph_A.shape[1]])-tf.eye(graph_A.shape[1])
+        # mask= tf.expand_dims(tf.expand_dims(mask,axis=0),axis=3)
+        # graph_A = graph_A*mask
+        graph_A = tf.expand_dims(G, axis=3)
+        mask = tf.ones([graph_A.shape[1], graph_A.shape[1]]) - tf.eye(graph_A.shape[1])
+        mask = tf.expand_dims(tf.expand_dims(mask, axis=0), axis=3)
+        # graph_A = graph_A*mask
         #------------------
         # graph_A = tf.expand_dims(g_linear,axis=3)
         return G,power_propotional,graph_A
