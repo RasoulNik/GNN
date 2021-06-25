@@ -7,7 +7,7 @@ Created on Sat Mar 28 15:36:42 2020
 #---------------------------------
 import tensorflow as tf
 #import socket
-GPU_mode = 0
+GPU_mode = 1
 if GPU_mode:
     num_GPU =0# GPU  to use, can be 0, 2
     mem_growth = True
@@ -21,7 +21,7 @@ if GPU_mode:
 import os, sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "lib"))
 import numpy as np
-import osl
+import os
 import time 
 # import matplotlib.pyplot as plt
 import scipy.io as sio

@@ -77,9 +77,9 @@ class GNN_layer(Layer):
         #     initializer = tf.keras.initializers.GlorotNormal(),
         #     trainable=True,
         # )
-        self.dens0 = tf.keras.layers.Dense(200, activation='relu',
+        self.dens0 = tf.keras.layers.Dense(50, activation='relu',
                                            kernel_initializer = tf.keras.initializers.GlorotNormal())
-        self.dens1 = tf.keras.layers.Dense(200,  activation='relu',
+        self.dens1 = tf.keras.layers.Dense(50,  activation='relu',
                                            kernel_initializer = tf.keras.initializers.GlorotNormal())
         self.dens2 = tf.keras.layers.Dense(input_shape[1], activation='linear',
                                            kernel_initializer = tf.keras.initializers.GlorotNormal())
@@ -108,13 +108,15 @@ class GNN_layer(Layer):
         L = A
         e,v = tf.linalg.eigh(L)
         e_real = tf.math.real(e)
-        y = self.dens0(e_real)
+        self.e_in = e_real
+        y = self.dens0(e_real[:,95:100])
         y = self.dens1(y)
         y = self.dens2(y)
+        self.e_out = y
         y = tf.expand_dims(y,axis=1)*eye
         y = tf.linalg.matmul(tf.linalg.matmul(v,y),v,transpose_b= True)
         y = tf.linalg.matmul(y,xin)
-        # y = tf.nn.relu(y)
+        # y = tf.nn.relu(y)+1e-5
         # y = y/(tf.reduce_sum(y,axis=1,keepdims= True)+1e-5)
         return y
     # def call(self, xin, A):

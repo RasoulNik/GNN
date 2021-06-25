@@ -9,7 +9,7 @@ import tensorflow as tf
 #import socket
 GPU_mode = 1
 if GPU_mode:
-    num_GPU = 1# GPU  to use, can be 0, 2
+    num_GPU = 3# GPU  to use, can be 0, 2
     mem_growth = True
     print('Tensorflow version: ', tf.__version__)
     gpus = tf.config.experimental.list_physical_devices("GPU")
@@ -36,8 +36,8 @@ batch_size = 50
 # database_size=batch_size*train_per_database
 EPOCHS =int(10000)
 #---------------- for values other than Nuser =12 and Nap=30, the size of environmen must be adjusted in the Data class
-Nuser = 40
-Nap = 100
+Nuser = 8
+Nap = 20
 P_over_noise = 125 # dB
 cost_type = 'maxmin'
 # cost_type = 'maxproduct'
@@ -162,11 +162,12 @@ xin = graph_A / unn.Xin_max
 # xcrossterm = (crossterm - unn.ct_av) / unn.ct_std
 # xin = xcrossterm
 
-p = unn.Network(xin)
+
+# p = unn.Network(xin)
 plot =Plot(Nap,Nuser)
-sinr_NN = plot.sinr(SNR,p)
-sinr_frac = plot.sinr(SNR,p_frac)
-plot.cdfplot([sinr_NN.numpy(),sinr_frac.numpy()])
+# sinr_NN = plot.sinr(SNR,p)
+# sinr_frac = plot.sinr(SNR,p_frac)
+# plot.cdfplot([sinr_NN.numpy(),sinr_frac.numpy()])
 _,SINR_NN,_ = unn.Loss(SNR,p)
 _,SINR_frac,_ = unn.Loss(SNR,p_frac)
 plot.cdfplot([SINR_NN.numpy(),SINR_frac.numpy()])

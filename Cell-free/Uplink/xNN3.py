@@ -113,9 +113,11 @@ class GNN_layer(Layer):
         L = tf.linalg.matmul(A,A,transpose_a=True)
         e,v = tf.linalg.eigh(L)
         e_real = tf.math.real(e)
+        self.e_real = e_real
         y = self.dens0(e_real)
         y = self.dens1(y)
         y = self.dens2(y)
+        self.y_debug = y
         y = tf.expand_dims(y,axis=1)*eye
         y = tf.linalg.matmul(tf.linalg.matmul(v,y),v,transpose_b= True)
         y = tf.linalg.matmul(y,xin)

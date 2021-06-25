@@ -11,7 +11,7 @@ GPU_mode= 1 # set this value one if you have proper GPU setup in your computer
 #The easiet way for using the GPU is docker
 
 if GPU_mode: 
-    num_GPU = 1 # choose among available GPUs
+    num_GPU = 2 # choose among available GPUs
     mem_growth = True
     print('Tensorflow version: ', tf.__version__)
     gpus = tf.config.experimental.list_physical_devices("GPU")
@@ -40,12 +40,12 @@ import pickle
 #------------------------------------------
 # tf.keras.backend.set_floatx('float64')
 #train_iterations = 100
-batch_size = 30
+batch_size = 50
 # train_per_database=100
 # database_size=batch_size*train_per_database
 EPOCHS = int(50000)
-Nuser = 10
-Nap = 10
+Nuser = 100
+Nap = 100
 #Lambda=.001
 #alpha=1
 Id_save='2'
@@ -162,7 +162,7 @@ def load_model(model, fn):
 data=Data(Nuser)
 # theta = .4 # a good benchmark for max-product cost
 theta = .7 # a good benchmark for maxmin cost
-G_batch,p_frac,graph_A=data(5*batch_size,theta)
+G_batch,p_frac,graph_A=data(10*batch_size,theta)
 # xin=np.reshape(G_batch,[batch_size,-1])
 SNR = np.power(10,P_over_noise/10)*G_batch
 # xin=np.reshape(np.log(SNR),[SNR.shape[0],-1])
@@ -194,28 +194,28 @@ SIR_frac = RP.sinr_av(SNR,p_frac,Nap,Nuser,'Noclip')
 plot = Plot()
 sir_vec = [SIR_NN.numpy(),SIR_frac.numpy()]
 plot.cdfplot(sir_vec)
-#----------------------------- test with different number of users
-K= 2
-data2 = Data(K*Nuser)
-unn2 = unn
-unn2.Nuser = K*Nuser
-unn2.Nap = K*Nap
-unn2.Loss.Nuser = K*Nuser
-unn2.Loss.Nap = K*Nap
-# theta = .4 # a good benchmark for max-product cost
-theta = .7 # a good benchmark for maxmin cost
-G_batch,p_frac,graph_A=data2(5*batch_size,theta)
-SNR = np.power(10,P_over_noise/10)*G_batch
-xin = graph_A/unn.Xin_max
-cost,SINR,min_SINR = unn2.Loss(SNR,unn2.Network(xin))
-print('For 2*Nuser Test cost is ',cost.numpy(),' min_SINR is ',min_SINR.numpy())
-SIR_NN_clip = RP.sinr_av(SNR,unn2.Network(xin),K*Nap,K*Nuser)
-SIR_NN = RP.sinr_av(SNR,unn2.Network(xin),K*Nap,K*Nuser,'Noclip')
-# Assuming that the network operates in the interference limited scenario
-SIR_frac = RP.sinr_av(SNR,p_frac,K*Nap,K*Nuser,'Noclip')
-plot = Plot()
-sir_vec = [SIR_NN.numpy(),SIR_frac.numpy()]
-plot.cdfplot(sir_vec)
+# #----------------------------- test with different number of users
+# K= 2
+# data2 = Data(K*Nuser)
+# unn2 = unn
+# unn2.Nuser = K*Nuser
+# unn2.Nap = K*Nap
+# unn2.Loss.Nuser = K*Nuser
+# unn2.Loss.Nap = K*Nap
+# # theta = .4 # a good benchmark for max-product cost
+# theta = .7 # a good benchmark for maxmin cost
+# G_batch,p_frac,graph_A=data2(5*batch_size,theta)
+# SNR = np.power(10,P_over_noise/10)*G_batch
+# xin = graph_A/unn.Xin_max
+# cost,SINR,min_SINR = unn2.Loss(SNR,unn2.Network(xin))
+# print('For 2*Nuser Test cost is ',cost.numpy(),' min_SINR is ',min_SINR.numpy())
+# SIR_NN_clip = RP.sinr_av(SNR,unn2.Network(xin),K*Nap,K*Nuser)
+# SIR_NN = RP.sinr_av(SNR,unn2.Network(xin),K*Nap,K*Nuser,'Noclip')
+# # Assuming that the network operates in the interference limited scenario
+# SIR_frac = RP.sinr_av(SNR,p_frac,K*Nap,K*Nuser,'Noclip')
+# plot = Plot()
+# sir_vec = [SIR_NN.numpy(),SIR_frac.numpy()]
+# plot.cdfplot(sir_vec)
 
 #----------------------------------------
 # unique_name=time.ctime(time.time())
